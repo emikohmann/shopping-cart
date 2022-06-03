@@ -19,17 +19,19 @@ func Start() {
 	router := gin.New()
 
 	// dependencies
-	var (
-		dbSchemas = []interface{}{&users.User{}, &items.Item{}}
-		dbClient  = database.NewDBClient("root:@tcp(127.0.0.1:3306)/cart?charset=utf8mb4&parseTime=True&loc=Local", &gorm.Config{
-			NowFunc: time.Now().UTC,
-			Logger:  gormLogger.Default.LogMode(gormLogger.Info),
-		}, dbSchemas...)
-		usersService    = usersService.NewServiceImpl(dbClient)
-		usersController = usersController.NewControllerImpl(usersService)
-		itemsService    = itemsService.NewServiceImpl(dbClient)
-		itemsController = itemsController.NewControllerImpl(itemsService)
-	)
+	dbSchemas := []interface{}{&users.User{}, &items.Item{}}
+	dbClient := database.NewDBClient("root:@tcp(127.0.0.1:3306)/cart?charset=utf8mb4&parseTime=True&loc=Local", &gorm.Config{
+		NowFunc: func() time.Time {
+			return time.Now().UTC()
+		},
+		Logger: gormLogger.Default.LogMode(gormLogger.Info),
+	}, dbSchemas...)
+
+	usersService := usersService.NewServiceImpl(dbClient)
+	itemsService := itemsService.NewServiceImpl(dbClient)
+
+	usersController := usersController.NewControllerImpl(usersService)
+	itemsController := itemsController.NewControllerImpl(itemsService)
 
 	// url mappings
 	router.POST("/users", usersController.Create)
