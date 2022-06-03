@@ -8,6 +8,7 @@ import (
 	"github.com/emikohmann/shopping-cart/api/src/api/utils/apierrors"
 	"github.com/emikohmann/shopping-cart/api/src/api/utils/logger"
 	"gorm.io/gorm"
+	"strings"
 )
 
 type serviceImpl struct {
@@ -80,9 +81,12 @@ func (s serviceImpl) Search(query search.Query) (search.Result, apierrors.APIErr
 	result := target.Limit(query.Limit).Offset(query.Offset).Find(&results)
 	if result.Error != nil {
 		logger.Error("Error searching items", result.Error)
+		if strings.Contains(strings.ToLower(result.Error.Error()), "unknown column") {
+			return search.Result{}, apierrors.NewBadRequestAPIError("invalid field name")
+		}
 		return search.Result{}, apierrors.NewInternalServerAPIError("error searching items")
 	}
-	
+
 	return search.Result{
 		Paging: search.Paging{
 			Limit:  query.Limit,
