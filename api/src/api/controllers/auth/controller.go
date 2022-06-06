@@ -1,7 +1,8 @@
-package users
+package auth
 
 import "github.com/gin-gonic/gin"
 
 type Controller interface {
-	Create(c *gin.Context)
+	Login(c *gin.Context)
+	Validate(c *gin.Context)
 }

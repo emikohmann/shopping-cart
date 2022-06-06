@@ -7,5 +7,5 @@ import (
 
 type Service interface {
 	Create(user users.User) (users.User, apierrors.APIError)
-	Login(user users.User) (users.User, apierrors.APIError)
+	Check(user users.User) (users.User, apierrors.APIError)
 }

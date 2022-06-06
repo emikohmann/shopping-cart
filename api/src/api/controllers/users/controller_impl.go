@@ -10,13 +10,13 @@ import (
 )
 
 type controllerImpl struct {
-	loginService service.Service
+	usersService service.Service
 }
 
-func NewControllerImpl(loginService service.Service) controllerImpl {
+func NewControllerImpl(usersService service.Service) controllerImpl {
 	logger.Info("Users controller successfully initialized")
 	return controllerImpl{
-		loginService: loginService,
+		usersService: usersService,
 	}
 }
 
@@ -30,7 +30,7 @@ func (c controllerImpl) Create(ctx *gin.Context) {
 		return
 	}
 
-	user, apiErr := c.loginService.Create(user)
+	user, apiErr := c.usersService.Create(user)
 	if apiErr != nil {
 		logger.Error("Error creating user", apiErr)
 		ctx.JSON(apiErr.Status(), apiErr)
@@ -39,25 +39,4 @@ func (c controllerImpl) Create(ctx *gin.Context) {
 
 	logger.Info("User successfully created")
 	ctx.JSON(http.StatusCreated, user)
-}
-
-func (c controllerImpl) Login(ctx *gin.Context) {
-	var user domain.User
-
-	if err := ctx.ShouldBindJSON(&user); err != nil {
-		logger.Error("Invalid user", err)
-		apiErr := apierrors.NewBadRequestAPIError("invalid user")
-		ctx.JSON(apiErr.Status(), apiErr)
-		return
-	}
-
-	user, apiErr := c.loginService.Login(user)
-	if apiErr != nil {
-		logger.Error("Error logging user", apiErr)
-		ctx.JSON(apiErr.Status(), apiErr)
-		return
-	}
-
-	logger.Info("User successfully logged in")
-	ctx.JSON(http.StatusOK, user)
 }

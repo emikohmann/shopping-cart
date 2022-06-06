@@ -38,14 +38,15 @@ func (s serviceImpl) Create(user users.User) (users.User, apierrors.APIError) {
 	return users.User{}, apierrors.NewBadRequestAPIError("user already exists")
 }
 
-func (s serviceImpl) Login(user users.User) (users.User, apierrors.APIError) {
-	result := s.dbClient.First(&user, "user_name = ? AND password = ?", user.UserName, hashing.MD5(user.Password))
+func (s serviceImpl) Check(user users.User) (users.User, apierrors.APIError) {
+	var found users.User
+	result := s.dbClient.First(&found, "user_name = ? AND password = ?", user.UserName, hashing.MD5(user.Password))
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return users.User{}, apierrors.NewUnauthorizedAPIError("invalid credentials")
 	}
 	if result.Error != nil {
-		logger.Error("Error logging user", result.Error)
-		return users.User{}, apierrors.NewInternalServerAPIError("error logging user")
+		logger.Error("Error checking user", result.Error)
+		return users.User{}, apierrors.NewInternalServerAPIError("error checking user")
 	}
-	return user, nil
+	return found, nil
 }
