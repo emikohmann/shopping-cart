@@ -30,7 +30,7 @@ func (c controllerImpl) Login(ctx *gin.Context) {
 		return
 	}
 
-	user, apiErr := c.authService.Login(user)
+	auth, apiErr := c.authService.Login(user)
 	if apiErr != nil {
 		logger.Error("Error logging user", apiErr)
 		ctx.JSON(apiErr.Status(), apiErr)
@@ -38,7 +38,7 @@ func (c controllerImpl) Login(ctx *gin.Context) {
 	}
 
 	logger.Info("User successfully logged in")
-	ctx.JSON(http.StatusOK, user)
+	ctx.JSON(http.StatusOK, auth)
 }
 
 func (c controllerImpl) Validate(ctx *gin.Context) {

@@ -7,6 +7,6 @@ import (
 )
 
 type Service interface {
-	Login(user users.User) (users.User, apierrors.APIError)
+	Login(user users.User) (auth.Auth, apierrors.APIError)
 	Validate(auth auth.Auth) (auth.Auth, apierrors.APIError)
 }

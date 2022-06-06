@@ -28,11 +28,11 @@ func NewServiceJWT(usersService usersService.Service, key []byte) serviceJWT {
 	}
 }
 
-func (s serviceJWT) Login(user users.User) (users.User, apierrors.APIError) {
+func (s serviceJWT) Login(user users.User) (domain.Auth, apierrors.APIError) {
 	found, apiErr := s.usersService.Check(user)
 	if apiErr != nil {
 		logger.Error("Error logging user", apiErr)
-		return users.User{}, apiErr
+		return domain.Auth{}, apiErr
 	}
 	expiresAt := time.Now().UTC().Add(30 * time.Second).Unix()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
@@ -42,18 +42,17 @@ func (s serviceJWT) Login(user users.User) (users.User, apierrors.APIError) {
 	signed, err := token.SignedString(s.key)
 	if err != nil {
 		logger.Error("Error signing token", err)
-		return users.User{}, apierrors.NewInternalServerAPIError("error signing token")
+		return domain.Auth{}, apierrors.NewInternalServerAPIError("error signing token")
 	}
 	if apiErr != nil {
 		logger.Error("Error logging user", apiErr)
-		return users.User{}, apiErr
+		return domain.Auth{}, apiErr
 	}
-	found.Auth = domain.Auth{
+	return domain.Auth{
 		Token:     signed,
 		UserName:  found.UserName,
 		ExpiresAt: expiresAt,
-	}
-	return found, nil
+	}, nil
 }
 
 func (s serviceJWT) Validate(auth domain.Auth) (domain.Auth, apierrors.APIError) {
