@@ -27,14 +27,17 @@ func (s serviceImpl) Create(user users.User) (users.User, apierrors.APIError) {
 			logger.Error("Error creating user", previous.Error)
 			return users.User{}, apierrors.NewInternalServerAPIError("error creating user")
 		}
+
 		user.Password = hashing.MD5(user.Password)
 		result := s.dbClient.Create(&user)
 		if result.Error != nil {
 			logger.Error("Error creating user", previous.Error)
 			return users.User{}, apierrors.NewInternalServerAPIError("error creating user")
 		}
+		
 		return user, nil
 	}
+
 	return users.User{}, apierrors.NewBadRequestAPIError("user already exists")
 }
 
@@ -44,9 +47,11 @@ func (s serviceImpl) Check(user users.User) (users.User, apierrors.APIError) {
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return users.User{}, apierrors.NewUnauthorizedAPIError("invalid credentials")
 	}
+
 	if result.Error != nil {
 		logger.Error("Error checking user", result.Error)
 		return users.User{}, apierrors.NewInternalServerAPIError("error checking user")
 	}
+
 	return found, nil
 }
