@@ -2,12 +2,14 @@ package auth
 
 import (
 	"errors"
+	"github.com/emikohmann/shopping-cart/api/src/api/config"
 	domain "github.com/emikohmann/shopping-cart/api/src/api/domain/auth"
 	"github.com/emikohmann/shopping-cart/api/src/api/domain/users"
 	usersService "github.com/emikohmann/shopping-cart/api/src/api/services/users"
 	"github.com/emikohmann/shopping-cart/api/src/api/utils/apierrors"
 	"github.com/emikohmann/shopping-cart/api/src/api/utils/logger"
 	"github.com/golang-jwt/jwt"
+	"strconv"
 	"time"
 )
 
@@ -17,14 +19,20 @@ const (
 )
 
 type serviceJWT struct {
-	usersService usersService.Service
-	key          []byte
+	usersService    usersService.Service
+	tokenSigningKey []byte
+	tokenExpiration time.Duration
 }
 
-func NewServiceJWT(usersService usersService.Service, key []byte) serviceJWT {
+func NewServiceJWT(usersService usersService.Service, config config.AuthConfig) serviceJWT {
+	seconds, err := strconv.ParseInt(config.TokenExpirationSeconds, 10, 64)
+	if err != nil {
+		logger.Panic("Error initializing JWT auth service", err)
+	}
 	return serviceJWT{
-		usersService: usersService,
-		key:          key,
+		usersService:    usersService,
+		tokenSigningKey: []byte(config.TokenSigningKey),
+		tokenExpiration: time.Duration(seconds) * time.Second,
 	}
 }
 
@@ -34,12 +42,12 @@ func (s serviceJWT) Login(user users.User) (domain.Auth, apierrors.APIError) {
 		logger.Error("Error logging user", apiErr)
 		return domain.Auth{}, apiErr
 	}
-	expiresAt := time.Now().UTC().Add(30 * time.Second).Unix()
+	expiresAt := time.Now().UTC().Add(s.tokenExpiration).Unix()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		claimUserName:  found.UserName,
 		claimExpiresAt: expiresAt,
 	})
-	signed, err := token.SignedString(s.key)
+	signed, err := token.SignedString([]byte(s.tokenSigningKey))
 	if err != nil {
 		logger.Error("Error signing token", err)
 		return domain.Auth{}, apierrors.NewInternalServerAPIError("error signing token")
@@ -60,7 +68,7 @@ func (s serviceJWT) Validate(auth domain.Auth) (domain.Auth, apierrors.APIError)
 		if _, ok := value.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("invalid signing method")
 		}
-		return s.key, nil
+		return s.tokenSigningKey, nil
 	})
 	data := parsed.Claims.(jwt.MapClaims)
 	if err != nil {
